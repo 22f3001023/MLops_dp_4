@@ -53,7 +53,7 @@ jobs:
               print("GOOGLE_APPLICATION_CREDENTIALS not set", file=sys.stderr); sys.exit(2)
           client = storage.Client()
           # replace with your bucket name or leave as- is to demonstrate access (no objects printed)
-          bucket_name = "mlopsga1_data"
+          bucket_name = "mlops-wk-1-sanjay007"
           try:
               b = client.lookup_bucket(bucket_name)
               if b:
