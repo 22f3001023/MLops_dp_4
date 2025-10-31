@@ -1,0 +1,100 @@
+name: CI (pytest + DVC + sanity test)
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          # install repo deps first (if requirements.txt exists)
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          # install DVC with GCS support and a small GCP helper lib
+          pip install "dvc[gs]" google-cloud-storage pytest joblib
+
+      - name: Authenticate to Google Cloud (from secret)
+        env:
+          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+        run: |
+          # write service account JSON to a protected file
+          printf '%s' "$GCP_SA_KEY" > $HOME/gcp-key.json
+          chmod 600 $HOME/gcp-key.json
+
+          # make credentials available to tools that respect GOOGLE_APPLICATION_CREDENTIALS
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcp-key.json" >> $GITHUB_ENV
+
+      - name: (Optional) Verify GCS access (quick sanity check)
+        run: |
+          python - <<'PY'
+          from google.cloud import storage
+          import os, sys
+          creds = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
+          if not creds:
+              print("GOOGLE_APPLICATION_CREDENTIALS not set", file=sys.stderr); sys.exit(2)
+          client = storage.Client()
+          # replace with your bucket name or leave as- is to demonstrate access (no objects printed)
+          bucket_name = "mlopsga1_data"
+          try:
+              b = client.lookup_bucket(bucket_name)
+              if b:
+                  print(f"Access to bucket '{bucket_name}' confirmed.")
+              else:
+                  print(f"Bucket '{bucket_name}' not found or no access.", file=sys.stderr); sys.exit(3)
+          except Exception as e:
+              print("GCS check failed:", e, file=sys.stderr); raise
+          PY
+
+      - name: Pull data and model from DVC remote
+        continue-on-error: true
+        run: |
+          # ensure dvc knows the default remote; your .dvc/config already sets core.remote=myremote
+          # explicitly pull from the named remote to be safe
+          dvc pull -v -r myremote
+
+      - name: Run pytest sanity and validation tests
+        run: |
+          mkdir -p ci_results
+          # run tests; we capture output to file but don't fail the job here (you can remove "|| true" to fail)
+          pytest -v | tee ci_results/result.txt || true
+          tail -n +1 ci_results/result.txt
+        
+      - name: Commit and push test results to repo
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          BRANCH_NAME=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
+          git checkout $BRANCH_NAME
+
+          git add -f ci_results/result.txt
+          git commit -m "Update CI test results [skip ci]" || echo "No changes to commit"
+          git push origin HEAD:$BRANCH_NAME || echo "Push skipped (no changes or permissions issue)"
+          
+      - name: Comment test results on commit
+        if: always() && hashFiles('ci_results/result.txt') != ''
+        uses: peter-evans/commit-comment@v3
+        with:
+          body-path: ci_results/result.txt

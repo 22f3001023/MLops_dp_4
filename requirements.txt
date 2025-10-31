@@ -1,0 +1,16 @@
+# Data & ML
+pandas==2.2.2
+numpy==1.26.4
+scikit-learn==1.4.2
+joblib==1.4.2
+
+# Version control & cloud
+dvc==3.51.2
+dvc[gcs]          # Adds GCS-specific dependencies for DVC remote
+gcsfs==2024.6.0
+google-cloud-storage==2.17.0
+google-auth==2.35.0
+
+# Utility
+tqdm==4.66.5      # Progress bars (DVC & ML often use this)
+pyyaml==6.0.2     # Used internally by DVC for configs

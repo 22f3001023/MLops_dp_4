@@ -1,0 +1,22 @@
+# Virtual environment
+venv/
+
+# DVC cache
+.dvc/cache/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Data & model intermediate files
+data/*.csv
+!data/v1/
+!data/v2/
+models/*.pkl
+
+# System / editor files
+.DS_Store
+*.log
+.pdf
+.md
