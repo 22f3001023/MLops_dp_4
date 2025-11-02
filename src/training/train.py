@@ -4,25 +4,28 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score, classification_report
 import joblib
 import json
-import os
-
-def save_metrics(metrics, metrics_path):
-    """
-    Saves metrics to a JSON file.
-    """
-    # Ensure the directory for metrics exists
-    os.makedirs(os.path.dirname(metrics_path), exist_ok=True)
-    with open(metrics_path, "w") as f:
-        json.dump(metrics, f, indent=4)
+import os 
 
 def training(data, model_path):
-    """
-    Trains the model and saves it.
-    """
-    # Split features and target
     X = data.drop(columns=["species"])
     y = data["species"]
 
-    # Train-test split
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y
+        X, y, test_size=0.2, random_state=42
+    )
+
+    clf = DecisionTreeClassifier(random_state=42)
+    clf.fit(X_train, y_train)
+    y_pred = clf.predict(X_test)
+    acc = accuracy_score(y_test, y_pred)
+    report = classification_report(y_test, y_pred, output_dict=True)
+
+    # ------------------
+    # ⬇️ 2. THIS IS THE FIX ⬇️
+    # ------------------
+    # Create the 'models/' directory if it doesn't exist
+    os.makedirs(os.path.dirname(model_path), exist_ok=True)
+
+    # Save the model
+    joblib.dump(clf, model_path)
+    return acc, report
