@@ -1,0 +1,122 @@
+# Name of your workflow
+name: Continuous Deployment
+
+# This workflow runs on every push to the 'main' branch
+on:
+  push:
+    branches:
+      - "main" # Or "master", whatever your default branch is
+
+# Environment variables available to all jobs
+env:
+  # Your GCP Project ID
+  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  
+  # The GKE cluster name you created
+  GKE_CLUSTER: autopilot-cluster-1
+  
+  # The GKE cluster zone (e.g., us-central1, us-central1-c)
+  # Find this on the GKE cluster details page in GCP
+  GKE_ZONE: us-central1
+  
+  # The Artifact Registry repo you created
+  GAR_REPO: iris-api
+  
+  # The name for your Docker image
+  IMAGE_NAME: iris-app
+  
+  # The path to your Kubernetes deployment file
+  DEPLOYMENT_FILE: ".k8s/deployment.yml"
+
+jobs:
+  build-and-push:
+    name: Build and Push to GAR
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: 'read'
+      id-token: 'write' # Required for GCP authentication
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    # Authenticate to Google Cloud
+    - name: Authenticate to GCP
+      id: auth
+      uses: 'google-github-actions/auth@v2'
+      with:
+        credentials_json: '${{ secrets.GCP_SA_KEY }}'
+
+    # Set up gcloud SDK
+    - name: Set up Cloud SDK
+      uses: 'google-github-actions/setup-gcloud@v2'
+
+    # Configure Docker to use gcloud as a credential helper
+    - name: Configure Docker
+      run: gcloud auth configure-docker ${{ env.GKE_ZONE }}-docker.pkg.dev
+
+    # Define the full image tag
+    - name: Define Image Tag
+      id: tag
+      run: |
+        echo "IMAGE_TAG=${{ env.GKE_ZONE }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.GAR_REPO }}/${{ env.IMAGE_NAME }}:${{ github.sha }}" >> $GITHUB_OUTPUT
+
+    # Build the Docker image
+    - name: Build Docker Image
+      run: |
+        docker build \
+          --tag ${{ steps.tag.outputs.IMAGE_TAG }} \
+          .
+
+    # Push the Docker image to Google Artifact Registry
+    - name: Push Docker Image
+      run: docker push ${{ steps.tag.outputs.IMAGE_TAG }}
+
+    # Expose the image tag as an output for the next job
+    - name: Set Image Tag Output
+      id: set-output
+      run: echo "IMAGE_URL=${{ steps.tag.outputs.IMAGE_TAG }}" >> $GITHUB_OUTPUT
+
+  deploy-to-gke:
+    name: Deploy to GKE
+    runs-on: ubuntu-latest
+    needs: build-and-push # This job only runs if 'build-and-push' succeeds
+    
+    permissions:
+      contents: 'read'
+      id-token: 'write' # Required for GCP authentication
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    # Authenticate to Google Cloud (again for this job)
+    - name: Authenticate to GCP
+      id: auth
+      uses: 'google-github-actions/auth@v2'
+      with:
+        credentials_json: '${{ secrets.GCP_SA_KEY }}'
+        
+    # Set up gcloud SDK
+    - name: Set up Cloud SDK
+      uses: 'google-github-actions/setup-gcloud@v2'
+
+    # Get GKE credentials (configures 'kubectl' for us)
+    - name: Get GKE credentials
+      uses: 'google-github-actions/get-gke-credentials@v2'
+      with:
+        cluster_name: ${{ env.GKE_CLUSTER }}
+        location: ${{ env.GKE_ZONE }}
+
+    # Replace the __IMAGE_URL__ placeholder in our deployment.yml
+    - name: Update Kubernetes Manifest
+      run: |
+        sed -i 's|__IMAGE_URL__|${{ needs.build-and-push.outputs.IMAGE_URL }}|g' ${{ env.DEPLOYMENT_FILE }}
+        echo "--- Updated ${{ env.DEPLOYMENT_FILE }} ---"
+        cat ${{ env.DEPLOYMENT_FILE }}
+
+    # Deploy the application to GKE
+    - name: Deploy to GKE
+      run: |
+        kubectl apply -f ${{ env.DEPLOYMENT_FILE }}
