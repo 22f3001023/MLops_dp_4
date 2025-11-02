@@ -102,13 +102,15 @@ jobs:
         cluster_name: ${{ env.GKE_CLUSTER }}
         location: ${{ env.GKE_ZONE }}
 
-    # 🛑 Use this dedicated action for replacement. It's more reliable than sed.
+    # 🛑 NEW WORKING REPLACEMENT STEP 🛑
     - name: Replace Image URL Placeholder 🔄
-      uses: c-hive/gha-token-replace@v1
+      uses: cschleiden/replace-tokens@v1 # This is the correct, working action
       with:
-        files: ${{ env.DEPLOYMENT_FILE }} 
-        from: __IMAGE_URL__
-        to: ${{ needs.build-and-push.outputs.IMAGE_URL }} # Gets the output from the 'build-and-push' job
+        files: '${{ env.DEPLOYMENT_FILE }}' # The file to modify
+      env:
+        # This action works by matching token names to ENV variables
+        # So we set an env variable named __IMAGE_URL__
+        __IMAGE_URL__: ${{ needs.build-and-push.outputs.IMAGE_URL }}
         
     # Debug step to confirm the replacement worked
     - name: Debug - Show Final Deployment YAML 🔎
