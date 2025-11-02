@@ -18,8 +18,8 @@ ____________________________ test_model_file_exists ____________________________
 >       assert os.path.exists(MODEL_PATH), f"{MODEL_PATH} missing"
 E       AssertionError: models/model.pkl missing
 E       assert False
-E        +  where False = <function exists at 0x7f518f376290>('models/model.pkl')
-E        +    where <function exists at 0x7f518f376290> = <module 'posixpath' from '/opt/hostedtoolcache/Python/3.10.19/x64/lib/python3.10/posixpath.py'>.exists
+E        +  where False = <function exists at 0x7f7dcc976290>('models/model.pkl')
+E        +    where <function exists at 0x7f7dcc976290> = <module 'posixpath' from '/opt/hostedtoolcache/Python/3.10.19/x64/lib/python3.10/posixpath.py'>.exists
 E        +      where <module 'posixpath' from '/opt/hostedtoolcache/Python/3.10.19/x64/lib/python3.10/posixpath.py'> = os.path
 
 tests/test_validation_and_evaluation.py:26: AssertionError
@@ -86,8 +86,8 @@ E           FileNotFoundError: [Errno 2] No such file or directory: 'models/mode
 =========================== short test summary info ============================
 FAILED tests/test_validation_and_evaluation.py::test_model_file_exists - AssertionError: models/model.pkl missing
 assert False
- +  where False = <function exists at 0x7f518f376290>('models/model.pkl')
- +    where <function exists at 0x7f518f376290> = <module 'posixpath' from '/opt/hostedtoolcache/Python/3.10.19/x64/lib/python3.10/posixpath.py'>.exists
+ +  where False = <function exists at 0x7f7dcc976290>('models/model.pkl')
+ +    where <function exists at 0x7f7dcc976290> = <module 'posixpath' from '/opt/hostedtoolcache/Python/3.10.19/x64/lib/python3.10/posixpath.py'>.exists
  +      where <module 'posixpath' from '/opt/hostedtoolcache/Python/3.10.19/x64/lib/python3.10/posixpath.py'> = os.path
 FAILED tests/test_validation_and_evaluation.py::test_model_prediction_shape - FileNotFoundError: [Errno 2] No such file or directory: 'models/model.pkl'
-========================= 2 failed, 3 passed in 0.79s ==========================
+========================= 2 failed, 3 passed in 0.48s ==========================
