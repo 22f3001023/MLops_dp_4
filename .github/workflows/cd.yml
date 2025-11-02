@@ -1,5 +1,5 @@
 # Name of your workflow
-name: Continuous Deployment
+name: Continuous Deployment 🚀
 
 # This workflow runs on every push to the 'main' branch
 on:
@@ -7,16 +7,15 @@ on:
     branches:
       - "main" # Or "master", whatever your default branch is
 
-# Environment variables available to all jobs
+# Environment variables available to all jobs (using your project details)
 env:
-  # Your GCP Project ID
+  # Your GCP Project ID (set via secret)
   GCP_PROJECT_ID: linear-stock-473507-v3
   
   # The GKE cluster name you created
   GKE_CLUSTER: autopilot-cluster-1
   
-  # The GKE cluster zone (e.g., us-central1, us-central1-c)
-  # Find this on the GKE cluster details page in GCP
+  # The GKE cluster zone/region (NOTE: Autopilot clusters use REGION, so us-central1 is correct)
   GKE_ZONE: us-central1
   
   # The Artifact Registry repo you created
@@ -41,47 +40,44 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    # Authenticate to Google Cloud
+    # --- Authentication Block ---
     - name: Authenticate to GCP
       id: auth
       uses: 'google-github-actions/auth@v2'
       with:
         credentials_json: '${{ secrets.GCP_SA_KEY }}'
 
-    # Set up gcloud SDK
     - name: Set up Cloud SDK
       uses: 'google-github-actions/setup-gcloud@v2'
 
-    # Configure Docker to use gcloud as a credential helper
     - name: Configure Docker
       run: gcloud auth configure-docker ${{ env.GKE_ZONE }}-docker.pkg.dev
+    # -----------------------------
 
-    # Define the full image tag
+    # --- Build and Push Block ---
     - name: Define Image Tag
       id: tag
       run: |
         echo "IMAGE_TAG=${{ env.GKE_ZONE }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.GAR_REPO }}/${{ env.IMAGE_NAME }}:${{ github.sha }}" >> $GITHUB_OUTPUT
 
-    # Build the Docker image
     - name: Build Docker Image
       run: |
         docker build \
           --tag ${{ steps.tag.outputs.IMAGE_TAG }} \
           .
 
-    # Push the Docker image to Google Artifact Registry
     - name: Push Docker Image
       run: docker push ${{ steps.tag.outputs.IMAGE_TAG }}
 
-    # Expose the image tag as an output for the next job
     - name: Set Image Tag Output
       id: set-output
       run: echo "IMAGE_URL=${{ steps.tag.outputs.IMAGE_TAG }}" >> $GITHUB_OUTPUT
+    # -----------------------------
 
   deploy-to-gke:
     name: Deploy to GKE
     runs-on: ubuntu-latest
-    needs: build-and-push # This job only runs if 'build-and-push' succeeds
+    needs: build-and-push 
     
     permissions:
       contents: 'read'
@@ -91,32 +87,44 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    # Authenticate to Google Cloud (again for this job)
+    # --- Authentication Block ---
     - name: Authenticate to GCP
       id: auth
       uses: 'google-github-actions/auth@v2'
       with:
         credentials_json: '${{ secrets.GCP_SA_KEY }}'
         
-    # Set up gcloud SDK
     - name: Set up Cloud SDK
       uses: 'google-github-actions/setup-gcloud@v2'
+    # -----------------------------
 
-    # Get GKE credentials (configures 'kubectl' for us)
+    # --- Deployment Setup ---
     - name: Get GKE credentials
       uses: 'google-github-actions/get-gke-credentials@v2'
       with:
         cluster_name: ${{ env.GKE_CLUSTER }}
         location: ${{ env.GKE_ZONE }}
 
-    # Replace the __IMAGE_URL__ placeholder in our deployment.yml
-    - name: Update Kubernetes Manifest
+    # 1. Capture the URL and perform the robust substitution
+    - name: Update Kubernetes Manifest with Image Tag ✅
       run: |
-        sed -i 's|__IMAGE_URL__|${{ needs.build-and-push.outputs.IMAGE_URL }}|g' ${{ env.DEPLOYMENT_FILE }}
-        echo "--- Updated ${{ env.DEPLOYMENT_FILE }} ---"
-        cat ${{ env.DEPLOYMENT_FILE }}
+        # Set image URL as a shell variable
+        IMAGE_URL="${{ needs.build-and-push.outputs.IMAGE_URL }}"
+        DEPLOYMENT_FILE="${{ env.DEPLOYMENT_FILE }}"
+        
+        # Use sed with the '|' delimiter (common for file paths)
+        # We wrap the command in double quotes to ensure the shell variable is expanded.
+        sed -i "s|__IMAGE_URL__|$IMAGE_URL|g" $DEPLOYMENT_FILE
 
-    # Deploy the application to GKE
+    # 2. Debug: Show the deployment file content to confirm replacement
+    - name: Debug - Show Final Deployment YAML 🔎
+      run: |
+        echo "--- Manifest after replacement ---"
+        # Print the contents of the Deployment file
+        cat ${{ env.DEPLOYMENT_FILE }}
+        echo "----------------------------------"
+
+    # 3. Deploy the application to GKE
     - name: Deploy to GKE
       run: |
         kubectl apply -f ${{ env.DEPLOYMENT_FILE }}
