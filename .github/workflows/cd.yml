@@ -7,15 +7,15 @@ on:
     branches:
       - "main" # Or "master", whatever your default branch is
 
-# Environment variables available to all jobs (using your project details)
+# Environment variables available to all jobs
 env:
-  # Your GCP Project ID (set via secret)
+  # Your GCP Project ID
   GCP_PROJECT_ID: linear-stock-473507-v3
   
   # The GKE cluster name you created
   GKE_CLUSTER: autopilot-cluster-1
   
-  # The GKE cluster zone/region (NOTE: Autopilot clusters use REGION, so us-central1 is correct)
+  # The GKE cluster zone/region
   GKE_ZONE: us-central1
   
   # The Artifact Registry repo you created
@@ -34,13 +34,16 @@ jobs:
 
     permissions:
       contents: 'read'
-      id-token: 'write' # Required for GCP authentication
+      id-token: 'write'
+
+    # This 'outputs' section is necessary to pass the URL to the next job
+    outputs:
+      IMAGE_URL: ${{ steps.set-output.outputs.IMAGE_URL }}
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    # --- Authentication Block ---
     - name: Authenticate to GCP
       id: auth
       uses: 'google-github-actions/auth@v2'
@@ -52,9 +55,7 @@ jobs:
 
     - name: Configure Docker
       run: gcloud auth configure-docker ${{ env.GKE_ZONE }}-docker.pkg.dev
-    # -----------------------------
 
-    # --- Build and Push Block ---
     - name: Define Image Tag
       id: tag
       run: |
@@ -72,22 +73,20 @@ jobs:
     - name: Set Image Tag Output
       id: set-output
       run: echo "IMAGE_URL=${{ steps.tag.outputs.IMAGE_TAG }}" >> $GITHUB_OUTPUT
-    # -----------------------------
 
   deploy-to-gke:
     name: Deploy to GKE
     runs-on: ubuntu-latest
-    needs: build-and-push 
+    needs: build-and-push # Ensures this job waits for the build
     
     permissions:
       contents: 'read'
-      id-token: 'write' # Required for GCP authentication
+      id-token: 'write'
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    # --- Authentication Block ---
     - name: Authenticate to GCP
       id: auth
       uses: 'google-github-actions/auth@v2'
@@ -96,35 +95,28 @@ jobs:
         
     - name: Set up Cloud SDK
       uses: 'google-github-actions/setup-gcloud@v2'
-    # -----------------------------
 
-    # --- Deployment Setup ---
     - name: Get GKE credentials
       uses: 'google-github-actions/get-gke-credentials@v2'
       with:
         cluster_name: ${{ env.GKE_CLUSTER }}
         location: ${{ env.GKE_ZONE }}
 
-    # 1. Capture the URL and perform the robust substitution
-    - name: Update Kubernetes Manifest with Image Tag ✅
-      run: |
-        # Set image URL as a shell variable
-        IMAGE_URL="${{ needs.build-and-push.outputs.IMAGE_URL }}"
-        DEPLOYMENT_FILE="${{ env.DEPLOYMENT_FILE }}"
+    # 🛑 Use this dedicated action for replacement. It's more reliable than sed.
+    - name: Replace Image URL Placeholder 🔄
+      uses: c-hive/gha-token-replace@v1
+      with:
+        files: ${{ env.DEPLOYMENT_FILE }} 
+        from: __IMAGE_URL__
+        to: ${{ needs.build-and-push.outputs.IMAGE_URL }} # Gets the output from the 'build-and-push' job
         
-        # Use sed with the '|' delimiter (common for file paths)
-        # We wrap the command in double quotes to ensure the shell variable is expanded.
-        sed -i "s#__IMAGE_URL__#$IMAGE_URL#g" $DEPLOYMENT_FILE
-
-    # 2. Debug: Show the deployment file content to confirm replacement
+    # Debug step to confirm the replacement worked
     - name: Debug - Show Final Deployment YAML 🔎
       run: |
         echo "--- Manifest after replacement ---"
-        # Print the contents of the Deployment file
         cat ${{ env.DEPLOYMENT_FILE }}
         echo "----------------------------------"
 
-    # 3. Deploy the application to GKE
     - name: Deploy to GKE
       run: |
         kubectl apply -f ${{ env.DEPLOYMENT_FILE }}
