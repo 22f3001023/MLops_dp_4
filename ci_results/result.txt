@@ -1,5 +1,5 @@
 ============================= test session starts ==============================
-platform linux -- Python 3.10.18, pytest-8.4.2, pluggy-1.6.0 -- /opt/hostedtoolcache/Python/3.10.18/x64/bin/python
+platform linux -- Python 3.10.19, pytest-8.4.2, pluggy-1.6.0 -- /opt/hostedtoolcache/Python/3.10.19/x64/bin/python
 cachedir: .pytest_cache
 rootdir: /home/runner/work/MLops_dp_4/MLops_dp_4
 plugins: hydra-core-1.3.2
@@ -18,9 +18,9 @@ ____________________________ test_data_file_exists _____________________________
 >       assert os.path.exists(DATA_PATH), f"{DATA_PATH} missing"
 E       AssertionError: data/data.csv missing
 E       assert False
-E        +  where False = <function exists at 0x7f3e1e976290>('data/data.csv')
-E        +    where <function exists at 0x7f3e1e976290> = <module 'posixpath' from '/opt/hostedtoolcache/Python/3.10.18/x64/lib/python3.10/posixpath.py'>.exists
-E        +      where <module 'posixpath' from '/opt/hostedtoolcache/Python/3.10.18/x64/lib/python3.10/posixpath.py'> = os.path
+E        +  where False = <function exists at 0x7f9608772290>('data/data.csv')
+E        +    where <function exists at 0x7f9608772290> = <module 'posixpath' from '/opt/hostedtoolcache/Python/3.10.19/x64/lib/python3.10/posixpath.py'>.exists
+E        +      where <module 'posixpath' from '/opt/hostedtoolcache/Python/3.10.19/x64/lib/python3.10/posixpath.py'> = os.path
 
 tests/test_validation_and_evaluation.py:15: AssertionError
 _________________________ test_data_columns_and_nulls __________________________
@@ -30,13 +30,13 @@ _________________________ test_data_columns_and_nulls __________________________
 
 tests/test_validation_and_evaluation.py:19: 
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
-/opt/hostedtoolcache/Python/3.10.18/x64/lib/python3.10/site-packages/pandas/io/parsers/readers.py:1026: in read_csv
+/opt/hostedtoolcache/Python/3.10.19/x64/lib/python3.10/site-packages/pandas/io/parsers/readers.py:1026: in read_csv
     return _read(filepath_or_buffer, kwds)
-/opt/hostedtoolcache/Python/3.10.18/x64/lib/python3.10/site-packages/pandas/io/parsers/readers.py:620: in _read
+/opt/hostedtoolcache/Python/3.10.19/x64/lib/python3.10/site-packages/pandas/io/parsers/readers.py:620: in _read
     parser = TextFileReader(filepath_or_buffer, **kwds)
-/opt/hostedtoolcache/Python/3.10.18/x64/lib/python3.10/site-packages/pandas/io/parsers/readers.py:1620: in __init__
+/opt/hostedtoolcache/Python/3.10.19/x64/lib/python3.10/site-packages/pandas/io/parsers/readers.py:1620: in __init__
     self._engine = self._make_engine(f, self.engine)
-/opt/hostedtoolcache/Python/3.10.18/x64/lib/python3.10/site-packages/pandas/io/parsers/readers.py:1880: in _make_engine
+/opt/hostedtoolcache/Python/3.10.19/x64/lib/python3.10/site-packages/pandas/io/parsers/readers.py:1880: in _make_engine
     self.handles = get_handle(
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
@@ -260,16 +260,16 @@ path_or_buf = 'data/data.csv', mode = 'r'
                 )
 E               FileNotFoundError: [Errno 2] No such file or directory: 'data/data.csv'
 
-/opt/hostedtoolcache/Python/3.10.18/x64/lib/python3.10/site-packages/pandas/io/common.py:873: FileNotFoundError
+/opt/hostedtoolcache/Python/3.10.19/x64/lib/python3.10/site-packages/pandas/io/common.py:873: FileNotFoundError
 ____________________________ test_model_file_exists ____________________________
 
     def test_model_file_exists():
 >       assert os.path.exists(MODEL_PATH), f"{MODEL_PATH} missing"
 E       AssertionError: models/model.pkl missing
 E       assert False
-E        +  where False = <function exists at 0x7f3e1e976290>('models/model.pkl')
-E        +    where <function exists at 0x7f3e1e976290> = <module 'posixpath' from '/opt/hostedtoolcache/Python/3.10.18/x64/lib/python3.10/posixpath.py'>.exists
-E        +      where <module 'posixpath' from '/opt/hostedtoolcache/Python/3.10.18/x64/lib/python3.10/posixpath.py'> = os.path
+E        +  where False = <function exists at 0x7f9608772290>('models/model.pkl')
+E        +    where <function exists at 0x7f9608772290> = <module 'posixpath' from '/opt/hostedtoolcache/Python/3.10.19/x64/lib/python3.10/posixpath.py'>.exists
+E        +      where <module 'posixpath' from '/opt/hostedtoolcache/Python/3.10.19/x64/lib/python3.10/posixpath.py'> = os.path
 
 tests/test_validation_and_evaluation.py:26: AssertionError
 _________________________ test_model_prediction_shape __________________________
@@ -331,18 +331,18 @@ filename = 'models/model.pkl', mmap_mode = None
 >           with open(filename, 'rb') as f:
 E           FileNotFoundError: [Errno 2] No such file or directory: 'models/model.pkl'
 
-/opt/hostedtoolcache/Python/3.10.18/x64/lib/python3.10/site-packages/joblib/numpy_pickle.py:650: FileNotFoundError
+/opt/hostedtoolcache/Python/3.10.19/x64/lib/python3.10/site-packages/joblib/numpy_pickle.py:650: FileNotFoundError
 =========================== short test summary info ============================
 FAILED tests/test_validation_and_evaluation.py::test_data_file_exists - AssertionError: data/data.csv missing
 assert False
- +  where False = <function exists at 0x7f3e1e976290>('data/data.csv')
- +    where <function exists at 0x7f3e1e976290> = <module 'posixpath' from '/opt/hostedtoolcache/Python/3.10.18/x64/lib/python3.10/posixpath.py'>.exists
- +      where <module 'posixpath' from '/opt/hostedtoolcache/Python/3.10.18/x64/lib/python3.10/posixpath.py'> = os.path
+ +  where False = <function exists at 0x7f9608772290>('data/data.csv')
+ +    where <function exists at 0x7f9608772290> = <module 'posixpath' from '/opt/hostedtoolcache/Python/3.10.19/x64/lib/python3.10/posixpath.py'>.exists
+ +      where <module 'posixpath' from '/opt/hostedtoolcache/Python/3.10.19/x64/lib/python3.10/posixpath.py'> = os.path
 FAILED tests/test_validation_and_evaluation.py::test_data_columns_and_nulls - FileNotFoundError: [Errno 2] No such file or directory: 'data/data.csv'
 FAILED tests/test_validation_and_evaluation.py::test_model_file_exists - AssertionError: models/model.pkl missing
 assert False
- +  where False = <function exists at 0x7f3e1e976290>('models/model.pkl')
- +    where <function exists at 0x7f3e1e976290> = <module 'posixpath' from '/opt/hostedtoolcache/Python/3.10.18/x64/lib/python3.10/posixpath.py'>.exists
- +      where <module 'posixpath' from '/opt/hostedtoolcache/Python/3.10.18/x64/lib/python3.10/posixpath.py'> = os.path
+ +  where False = <function exists at 0x7f9608772290>('models/model.pkl')
+ +    where <function exists at 0x7f9608772290> = <module 'posixpath' from '/opt/hostedtoolcache/Python/3.10.19/x64/lib/python3.10/posixpath.py'>.exists
+ +      where <module 'posixpath' from '/opt/hostedtoolcache/Python/3.10.19/x64/lib/python3.10/posixpath.py'> = os.path
 FAILED tests/test_validation_and_evaluation.py::test_model_prediction_shape - FileNotFoundError: [Errno 2] No such file or directory: 'models/model.pkl'
-========================= 4 failed, 1 passed in 0.79s ==========================
+========================= 4 failed, 1 passed in 0.77s ==========================
