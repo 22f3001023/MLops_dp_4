@@ -114,7 +114,7 @@ jobs:
         
         # Use sed with the '|' delimiter (common for file paths)
         # We wrap the command in double quotes to ensure the shell variable is expanded.
-        sed -i "s|__IMAGE_URL__|$IMAGE_URL|g" $DEPLOYMENT_FILE
+        sed -i "s#__IMAGE_URL__#$IMAGE_URL#g" $DEPLOYMENT_FILE
 
     # 2. Debug: Show the deployment file content to confirm replacement
     - name: Debug - Show Final Deployment YAML 🔎
