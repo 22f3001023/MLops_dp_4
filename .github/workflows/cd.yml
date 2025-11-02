@@ -10,7 +10,7 @@ on:
 # Environment variables available to all jobs
 env:
   # Your GCP Project ID
-  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  GCP_PROJECT_ID: linear-stock-473507-v3
   
   # The GKE cluster name you created
   GKE_CLUSTER: autopilot-cluster-1
