@@ -1,0 +1,14 @@
+artifact_uri: file:///home/sanjaybdatascientist_gmail_com/mlopsoppe1/week-8/MLops_dp_4/mlruns/609479541036383864/51d8091a2dad45bba385ac55aa2e72ee/artifacts
+end_time: 1763300084174
+entry_point_name: ''
+experiment_id: '609479541036383864'
+lifecycle_stage: active
+run_id: 51d8091a2dad45bba385ac55aa2e72ee
+run_name: poison_0_percent
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1763300081315
+status: 3
+tags: []
+user_id: sanjaybdatascientist_gmail_com

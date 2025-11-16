@@ -1,0 +1,10 @@
+artifact_location: file:///home/sanjaybdatascientist_gmail_com/mlopsoppe1/week-8/MLops_dp_4/mlruns/609479541036383864/models/m-5299f81490ca4f1193b2ca7abb711014/artifacts
+creation_timestamp: 1763299802738
+experiment_id: '609479541036383864'
+last_updated_timestamp: 1763299809474
+model_id: m-5299f81490ca4f1193b2ca7abb711014
+model_type: null
+name: model
+source_run_id: 561df4d3995a4e2fa30807ae0c225b80
+status: 2
+status_message: null
