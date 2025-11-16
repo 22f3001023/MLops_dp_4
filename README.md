@@ -6,15 +6,15 @@ This project demonstrates a pipeline for a data poisoning experiment on the IRIS
 
 ## 🎯 Assignment Objective
 
-> Integrate data poisoning for IRIS using randomly generated numbers at various levels(5%, 10%, 50%) and explain the validation outcomes when trained on such data using MLFlow. [cite\_start]Give your thoughts on how to mitigate such a poisoning attacks and how data quantity requirements evolve when data quality is affected. [cite: 181]
+> Integrate data poisoning for IRIS using randomly generated numbers at various levels(5%, 10%, 50%) and explain the validation outcomes when trained on such data using MLFlow. Give your thoughts on how to mitigate such a poisoning attacks and how data quantity requirements evolve when data quality is affected. [cite: 181]
 
 -----
 
 ## 🛠️ Tech Stack
 
-  * [cite\_start]**Data Versioning:** DVC (Data Version Control) [cite: 186, 187]
-  * [cite\_start]**Experiment Tracking:** MLFlow [cite: 181]
-  * [cite\_start]**Cloud Storage:** Google Cloud Storage (GCS) (as DVC remote) [cite: 187]
+  * **Data Versioning:** DVC (Data Version Control) [cite: 186, 187]
+  * **Experiment Tracking:** MLFlow [cite: 181]
+  * **Cloud Storage:** Google Cloud Storage (GCS) (as DVC remote) [cite: 187]
   * **Training:** Python, Pandas, Scikit-learn
   * **Automation:** Bash (`run_experiments.sh`)
 
@@ -99,9 +99,9 @@ As shown in the MLFlow results, the model's accuracy degrades significantly as t
 
 ### How to Mitigate Poisoning Attacks
 
-1.  **Data Validation Pipelines:** The best defense is to catch bad data *before* training. [cite\_start]We can add automated steps to our CI pipeline (like GitHub Actions [cite: 189]) to validate incoming data. These checks can look for sudden shifts in label distribution or other statistical anomalies.
+1.  **Data Validation Pipelines:** The best defense is to catch bad data *before* training. We can add automated steps to our CI pipeline (like GitHub Actions [cite: 189]) to validate incoming data. These checks can look for sudden shifts in label distribution or other statistical anomalies.
 2.  **Outlier Detection:** Run anomaly detection algorithms on the training data to find and flag samples that are statistically different from the rest. These are often the poisoned samples.
-3.  [cite\_start]**Data Versioning (DVC):** As demonstrated in this project, DVC itself is a mitigation tool[cite: 186]. [cite\_start]By versioning our data, if we observe a sudden model performance drop, we can instantly roll back (`dvc checkout`) to a previous "known-good" version of the data and investigate what changed[cite: 188].
+3.  **Data Versioning (DVC):** As demonstrated in this project, DVC itself is a mitigation tool[cite: 186]. By versioning our data, if we observe a sudden model performance drop, we can instantly roll back (`dvc checkout`) to a previous "known-good" version of the data and investigate what changed[cite: 188].
 
 ### Data Quality vs. Quantity
 
