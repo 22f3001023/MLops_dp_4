@@ -1,142 +1,110 @@
-Here’s a cleaned-up and professional version formatted as a full `README.md` file for your Iris Classifier MLOps project.
 
-***
 
-# Iris Classifier MLOps CI/CD Pipeline
+# MLOps Week 8 Assignment: Data Poisoning & Experiment Tracking
 
-This repository demonstrates a complete, end-to-end **MLOps workflow** for training, testing, and deploying a machine learning model using a Decision Tree classifier on the Iris dataset. It implements fully automated **Continuous Integration (CI)** and **Continuous Deployment (CD)** pipelines using **GitHub Actions**, deploying the final model as an API to **Google Kubernetes Engine (GKE)**.
+This project demonstrates a pipeline for a data poisoning experiment on the IRIS dataset. It uses DVC to version data and models, and MLFlow to log and compare the validation outcomes of models trained on data with varying levels of corruption.
 
-***
+## 🎯 Assignment Objective
 
-## Pipeline Overview
+> Integrate data poisoning for IRIS using randomly generated numbers at various levels(5%, 10%, 50%) and explain the validation outcomes when trained on such data using MLFlow. [cite\_start]Give your thoughts on how to mitigate such a poisoning attacks and how data quantity requirements evolve when data quality is affected. [cite: 181]
 
-This project fulfills the core requirements of an MLOps system by integrating:
+-----
 
-- **Continuous Integration (CI):** Automated training, testing, and validation.
-- **Continuous Deployment (CD):** Automated containerization, image push, and Kubernetes deployment.
+## 🛠️ Tech Stack
 
-Two main workflows are triggered automatically on each push to the `main` branch.
+  * [cite\_start]**Data Versioning:** DVC (Data Version Control) [cite: 186, 187]
+  * [cite\_start]**Experiment Tracking:** MLFlow [cite: 181]
+  * [cite\_start]**Cloud Storage:** Google Cloud Storage (GCS) (as DVC remote) [cite: 187]
+  * **Training:** Python, Pandas, Scikit-learn
+  * **Automation:** Bash (`run_experiments.sh`)
 
-***
+-----
 
-## 1. Continuous Integration (CI) – `.github/workflows/ci.yml`
+## 📂 Project Pipeline
 
-The CI pipeline ensures that the model, data, and codebase are valid before deployment.
+The experiment is orchestrated by a single script, `run_experiments.sh`, which performs the following steps:
 
-### Steps
+1.  **`create_poisoned_data.py`:** Loads the original IRIS dataset, injects label noise at 5%, 10%, and 50% levels, and saves four distinct CSV files (`iris_original.csv`, `iris_poisoned_5.csv`, etc.).
+2.  **`dvc add`:** The script versions all four new datasets using DVC.
+3.  **`train.py`:** This MLFlow-integrated script is called four times. It trains a RandomForestClassifier on each dataset, logging all parameters (like `data_path`) and metrics (accuracy, precision, recall) to MLFlow.
+4.  **`dvc add`:** After each model is trained, it is versioned by DVC.
+5.  **`git commit`:** The script commits all new `.dvc` files to Git.
+6.  **`dvc push`:** All DVC-tracked data and models are pushed to the Google Cloud Storage remote.
 
-- **Checkout Code:** Clones the repository.
-- **Setup Environment:** Installs Python and dependencies from `requirements.txt`.
-- **Run Training:** Executes `src/main.py` to train the model and save:
-  - `models/model.pkl` – serialized Decision Tree model.
-  - `metrics.json` – model performance metrics.
-- **Run Tests (Pytest):** Validates:
-  - Presence and correctness of the data file.
-  - Correct column structure in `data.csv`.
-  - Existence of the trained `model.pkl` file.
-  - Creation and accuracy threshold in `metrics.json`.
+-----
 
-***
+## 🚀 How to Run the Experiment
 
-## 2. Continuous Deployment (CD) – `.github/workflows/cd.yml`
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/22f3001023/MLops_dp_4.git
+    cd MLops_dp_4
+    ```
+2.  **Set up the environment:**
+    ```bash
+    python3 -m venv .env
+    source .env/bin/activate
+    pip install -r requirements.txt
+    ```
+3.  **Authenticate with GCS:** (Required for DVC to push/pull)
+    ```bash
+    gcloud auth application-default login
+    ```
+4.  **Run the full experiment:**
+    ```bash
+    # Make the script executable
+    chmod +x run_experiments.sh
 
-The CD pipeline builds a container image for the trained model, pushes it to **Google Artifact Registry (GAR)**, and deploys it to **GKE**.
+    # Run the pipeline
+    ./run_experiments.sh
+    ```
+5.  **View the results in MLFlow:**
+      * **If running on a remote VM:** You must first create an SSH tunnel from your local machine.
+        ```bash
+        # On your LOCAL machine (e.g., PowerShell/Terminal)
+        gcloud compute ssh YOUR_INSTANCE_NAME --zone=YOUR_ZONE -- -L 8080:localhost:5000
+        ```
+      * **In your instance terminal:** Run the MLFlow UI.
+        ```bash
+        # In your INSTANCE terminal
+        mlflow ui
+        ```
+      * Open **`http://localhost:8080`** in your **local** web browser to see the dashboard.
 
-### Job 1: `build-and-push`
+-----
 
-- **Checkout Code**  
-  Clones the repository.
+## 📊 Results & Validation Outcomes
 
-- **Authenticate to GCP**  
-  Uses a Google Cloud Service Account Key for authentication.
+The experiment was tracked using MLFlow. By comparing the four runs, we can clearly see the direct impact of data poisoning on model performance.
 
-- **Configure Docker for GAR**  
-  Enables Docker to push images securely.
+| Run Name | Data Source | Accuracy | Precision | Recall |
+| :--- | :--- | :--- | :--- | :--- |
+| `poison_0_percent` | `iris_original.csv` | **1.0** | 1.0 | 1.0 |
+| `poison_5_percent` | `iris_poisoned_5.csv` | **0.933** | 0.935 | 0.933 |
+| `poison_10_percent`| `iris_poisoned_10.csv` | **0.800** | 0.803 | 0.800 |
+| `poison_50_percent`| `iris_poisoned_50.csv` | **0.444** | 0.461 | 0.444 |
 
-- **Build & Tag Docker Image**  
-  Builds a container image from the `Dockerfile`, tagging it with the commit SHA.
+### Explanation:
 
-- **Push to Artifact Registry**  
-  Pushes the image to Google Artifact Registry.
+As shown in the MLFlow results, the model's accuracy degrades significantly as the percentage of poisoned data (corrupted labels) increases.
 
-### Job 2: `deploy-to-gke` (depends on `build-and-push`)
+  * **Baseline:** The model on clean data achieves 100% accuracy.
+  * **5% Poisoning:** A small 5% corruption drops the accuracy by \~7%.
+  * **10% Poisoning:** The accuracy falls to 80% as the model starts learning incorrect patterns.
+  * **50% Poisoning:** The data is so corrupt that the model is completely confused, and its accuracy plummets to 44.4%, which is worse than random guessing for a 3-class problem.
 
-- **Checkout Code**  
-  Clones the repository again for deployment.
+-----
 
-- **Authenticate to GCP**  
-  Re-authenticates the workflow with the service account.
+## 💡 Mitigation & Key Takeaways
 
-- **Get GKE Credentials**  
-  Configures `kubectl` to connect to the GKE cluster (`autopilot-cluster-1`).
+### How to Mitigate Poisoning Attacks
 
-- **Replace Image Placeholder**  
-  Dynamically replaces the `__IMAGE_URL__` placeholder in `.k8s/deployment.yml` with the new image path using the GitHub Action `cschleiden/replace-tokens`.
+1.  **Data Validation Pipelines:** The best defense is to catch bad data *before* training. [cite\_start]We can add automated steps to our CI pipeline (like GitHub Actions [cite: 189]) to validate incoming data. These checks can look for sudden shifts in label distribution or other statistical anomalies.
+2.  **Outlier Detection:** Run anomaly detection algorithms on the training data to find and flag samples that are statistically different from the rest. These are often the poisoned samples.
+3.  [cite\_start]**Data Versioning (DVC):** As demonstrated in this project, DVC itself is a mitigation tool[cite: 186]. [cite\_start]By versioning our data, if we observe a sudden model performance drop, we can instantly roll back (`dvc checkout`) to a previous "known-good" version of the data and investigate what changed[cite: 188].
 
-- **Deploy to GKE**  
-  Executes `kubectl apply -f .k8s/deployment.yml` to deploy the updated image.  
-  The Kubernetes **Service (LoadBalancer)** exposes the Flask API to external users.
+### Data Quality vs. Quantity
 
-***
+This experiment proves that **data quality is far more important than data quantity.**
 
-## Technologies Used
-
-| Domain | Technologies |
-|---------|---------------|
-| **ML / Data** | Python, Pandas, Scikit-learn |
-| **API** | Flask |
-| **Testing** | Pytest |
-| **CI/CD** | GitHub Actions |
-| **Containerization** | Docker |
-| **Cloud Platform** | Google Cloud Platform (GCP) |
-| **Orchestration** | Google Kubernetes Engine (GKE) |
-| **Registry** | Google Artifact Registry (GAR) |
-
-***
-
-## Repository Structure
-
-```
-.
-├── .github/workflows/
-│   ├── ci.yml              # CI: Training and testing workflow
-│   └── cd.yml              # CD: Build, push, and deploy workflow
-├── .k8s/
-│   └── deployment.yml      # Kubernetes Deployment and Service definitions
-├── data/
-│   └── data.csv            # Iris dataset
-├── models/
-│   └── .gitignore          # Excludes trained models from version control
-├── src/
-│   ├── app.py              # Flask API server
-│   ├── main.py             # Entry point for model training
-│   └── training/
-│       └── train.py        # Core training and evaluation logic
-├── tests/
-│   └── test_validation.py  # Pytest scripts for validation
-├── Dockerfile              # API container build configuration
-├── metrics.json            # Model evaluation metrics (ignored in git)
-└── requirements.txt        # Python dependencies
-```
-
-***
-
-## Deployment Architecture
-
-1. **Developer pushes code → GitHub Action triggers.**  
-2. **CI pipeline** runs tests, training, and validation.  
-3. Upon success, **CD pipeline** builds and pushes the image to GAR.  
-4. The image is deployed to **GKE** and exposed as a LoadBalancer service.  
-5. The API becomes accessible via an external IP endpoint.
-
-***
-
-## Outputs
-
-- Trained model: `models/model.pkl`
-- Model metrics: `metrics.json`
-- Live API endpoint via GKE LoadBalancer
-
-***
-
-Would you like a short “Quick Start” section added to guide users through setting up GCP authentication and running the pipeline locally?
+A model trained on just 150 high-quality rows performed perfectly (100% accuracy). However, introducing just 15 bad data points (10%) crippled the model. Having 10,000 rows of low-quality, poisoned data would be significantly worse than 1,000 rows of clean, verified data.
